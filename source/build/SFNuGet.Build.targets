@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+***********************************************************************************************
+Microsoft.VisualStudio.Azure.Fabric.Application.targets
+
+I'm not gonna tell you how to live your life.
+
+This file defines the steps in the package process for SFNuget services.
+
+***********************************************************************************************
+-->
+
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <SFNuGetPackagePattern Condition=" '$(SFNuGetPackagePattern)' == '' ">*Pkg</SFNuGetPackagePattern>
+  </PropertyGroup>
+
+  <Target Name="FindSFNuGetServices">
+    <ItemGroup>
+      <_NugetableServicePackages Include="$([System.IO.Directory]::GetDirectories('$(SolutionDir)packages', '$(SFNuGetPackagePattern)', System.IO.SearchOption.AllDirectories))" />
+      <NugetableServicePackagesWithName Include="@(_NugetableServicePackages)">
+        <Name>$([System.IO.Path]::GetFileName('%(_NugetableServicePackages.Identity)'))</Name>
+        <Source>%(_NugetableServicePackages.Identity)\**\*</Source>
+      </NugetableServicePackagesWithName>
+      <NugetableServicePackagesFiles Include="%(NugetableServicePackagesWithName.Source)">
+        <Name>%(Name)</Name>
+        <Root>%(Identity)</Root>
+      </NugetableServicePackagesFiles>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="DefendServiceManifestImportsFromAppManifestCleanupUtil" BeforeTargets="FixUpServiceFabricApplicationManifest" DependsOnTargets="FindSFNuGetServices">
+    <ItemGroup Condition=" '$(NugetableServicePackagesFiles.Length)' != '0' ">
+      <_NugetableServicePackagesFilesWithPackageRootDestination Include="@(NugetableServicePackagesFiles)">
+        <Destination>$([System.IO.Path]::GetFullPath('$(ApplicationPackageRootFolder)\%(Name)\$([MSBuild]::MakeRelative(%(Root), %(FullPath)))'))</Destination>
+      </_NugetableServicePackagesFilesWithPackageRootDestination>
+    </ItemGroup>
+
+    <Copy Condition=" '$(NugetableServicePackagesFiles.Length)' != '0' "
+          SkipUnchangedFiles="true"
+          SourceFiles="@(_NugetableServicePackagesFilesWithPackageRootDestination)"
+          DestinationFiles="@(_NugetableServicePackagesFilesWithPackageRootDestination->'%(Destination)')" />
+  </Target>
+
+  <Target Name="CleanupDefendServiceManifestImportsFromAppManifestCleanupUtil" AfterTargets="FixUpServiceFabricApplicationManifest">
+    <RemoveDir Directories="@(NugetableServicePackagesWithName->'$(ApplicationPackageRootFolder)\%(Name)')" />
+  </Target>
+
+  <Target Name="PackageSFNuGetServices" BeforeTargets="Package" DependsOnTargets="FindSFNuGetServices" >
+    <ItemGroup Condition=" '$(NugetableServicePackagesFiles.Length)' != '0' ">
+      <_NugetableServicePackagesFilesWithOutputDestination Include="@(NugetableServicePackagesFiles)">
+        <Destination>$([System.IO.Path]::GetFullPath('$(PackageLocation)\%(Name)\$([MSBuild]::MakeRelative(%(Root), %(FullPath)))'))</Destination>
+      </_NugetableServicePackagesFilesWithOutputDestination>
+    </ItemGroup>
+
+    <Message Text="%(NugetableServicePackagesWithName.Name) -> $([System.IO.Path]::GetFullPath($(PackageLocation)))" Importance="High" />
+
+    <Copy Condition=" '$(NugetableServicePackagesFiles.Length)' != '0' "
+          SkipUnchangedFiles="true"
+          SourceFiles="@(_NugetableServicePackagesFilesWithOutputDestination)"
+          DestinationFiles="@(_NugetableServicePackagesFilesWithOutputDestination->'%(Destination)')" />
+
+    <OnError ExecuteTargets="CleanupDefendServiceManifestImportsFromAppManifestCleanupUtil"/>
+  </Target>
+</Project>

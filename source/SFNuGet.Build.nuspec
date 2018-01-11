@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>SFNuGet.Build</id>
+    <version>1.0.0-alpha-00</version>
+    <authors>NickDarvey</authors>
+    <owners>NickDarvey</owners>
+    <licenseUrl>https://github.com/NickDarvey/SFNuGet.Build/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/NickDarvey/SFNuGet.Build</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>MSBuild targets to get your SFNuGet Service Fabric services in amongst that application of yours.</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright 2018</copyright>
+    <tags>SFNuGet MSBuild service fabric</tags>
+    <language>en-US</language>
+  </metadata>
+  <files>
+    <file src="build\**" target="build" />
+    <!--<file src="build\**" target="buildMultiTargeting" />-->
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
